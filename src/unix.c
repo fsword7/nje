@@ -80,6 +80,13 @@ init_command_mailbox()
 	int	fd;
 	char	path[LINESIZE];
 	struct stat dstat;
+	char *socknam = COMMAND_MAILBOX;
+
+	/* Skip the initial token.. */
+	while (*socknam != ' ' && *socknam != '\t' && *socknam != 0)
+	  ++socknam;
+	while (*socknam == ' ' || *socknam == '\t')
+	  ++socknam;
 
 	/* We need a random number soon.. */
 #ifdef	USG
@@ -96,25 +103,24 @@ init_command_mailbox()
 	  char *s;
 	  int rc;
 
-	  s = strrchr(COMMAND_MAILBOX+1,'/');
-	  if (s) {
-	    unlink(COMMAND_MAILBOX+1);
-	    rc = mkfifo(COMMAND_MAILBOX+1,S_IFIFO|0660);
+	  if (*socknam != '/') {
+	    unlink(socknam);
+	    rc = mkfifo(socknam,S_IFIFO|0660);
 	    *s = 0;
-	    if (rc==0 && stat(COMMAND_MAILBOX+1,&dstat) == 0) {
+	    if (rc==0 && stat(socknam,&dstat) == 0) {
 	      *s = '/';
-	      chown(COMMAND_MAILBOX+1,0,dstat.st_gid);
-	      chmod(COMMAND_MAILBOX+1,0660);
+	      chown(socknam,0,dstat.st_gid);
+	      chmod(socknam,0660);
 	    } else {
 	      logger(1,"UNIX: Can't mkfifo() COMMAND_MAILBOX, or no directory!  Error: %s\n",PRINT_ERRNO);
 	      exit(9);
 	    }
 	  } else {
-	    logger(1,"UNIX: Command mailbox not configured!\n");
+	    logger(1,"UNIX: Command mailbox FIFO bad parameters!\n");
 	    exit(8);
 	  }
 
-	  CommandSocket = open(COMMAND_MAILBOX+1,O_RDONLY|O_NDELAY,0);
+	  CommandSocket = open(socknam,O_RDONLY|O_NDELAY,0);
 
 	  if (*COMMAND_MAILBOX == 'f')
 	    cmdbox = CMD_FIFO0;
@@ -140,13 +146,13 @@ init_command_mailbox()
 	    exit(1);
 	  }
 
-	  unlink(COMMAND_MAILBOX+1);  /* in case there is one from
+	  unlink(socknam);  /* in case there is one from
 					 previous run.. */
 	  bzero((char *) &SocketName, sizeof(SocketName));
 
 	  /* Now, bind a local name for it */
 	  SocketName.sun_family = AF_UNIX;
-	  strcpy(SocketName.sun_path, COMMAND_MAILBOX+1);
+	  strcpy(SocketName.sun_path, socknam);
 
 	  i = sizeof(SocketName.sun_family) + strlen(SocketName.sun_path);
 	  if (bind(CommandSocket, (struct sockaddr *)&SocketName, i) < 0) {
@@ -169,7 +175,6 @@ init_command_mailbox()
 	  int portnum;
 	  int on = 1;
 
-
 	  /* Create a local socket */
 	  if ((CommandSocket = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
 	    logger(1, "UNIX, Can't create command socket, error: %s\n",
@@ -184,16 +189,16 @@ init_command_mailbox()
 	  memset(&SocketName,0,sizeof SocketName);
 	  SocketName.sin_family      = AF_INET;
 	  SocketName.sin_addr.s_addr = htonl(INADDR_ANY);
-	  iaddr = inet_addr(COMMAND_MAILBOX+1);
+	  iaddr = inet_addr(socknam);
 	  if (iaddr != 0xFFFFFFFFL)
 	  SocketName.sin_addr.s_addr = iaddr;
 	  portnum = 175;
-	  sscanf(COMMAND_MAILBOX+1,"%*s %d", &portnum);
-	  SocketName.sin_port        = htons(portnum);
+	  sscanf(socknam,"%*s %d", &portnum);
+	  SocketName.sin_port = htons(portnum);
 
 	  if (bind(CommandSocket, &SocketName, sizeof(SocketName)) == -1) {
-	    logger(1, "UNIX, Can't bind command socket, error: %s\n",
-		   PRINT_ERRNO);
+	    logger(1, "UNIX, Can't bind command socket '%s', error: %s\n",
+		   socknam, PRINT_ERRNO);
 	    exit(1);
 	  }
 
@@ -926,49 +931,57 @@ const int n;
 	/* int options; */
 	int pid;
 
-	/* It seems that normal wait() without explicitic calls to this
-	   procedure can work also.  All tests indicate that polled
-	   handle_childs() just returns because of (pid <= 0). Always.
-	   Interrupt based handling has taken care of dead child.
-	   This is true at least on  SunOS 4.0.3			*/
+	for (;;) {
 
-	pid = waitpid (-1 /* Any child */, &status, WNOHANG);
-	if (pid <= 0) return ; /* No childs waiting for us. */
+	  /* It seems that normal wait() without explicitic calls to this
+	     procedure can work also.  All tests indicate that polled
+	     handle_childs() just returns because of (pid <= 0). Always.
+	     Interrupt based handling has taken care of dead child.
+	     This is true at least on  SunOS 4.0.3			*/
 
-	/* We salvage dead childrens and make sure we don't gather zombies */
-	if (WIFSTOPPED(status))
-	  logger(2,"SIGCHLD: child stopped! pid=%d, signal=%d\n",
-		 pid,WSTOPSIG(status));
-	else if (WIFSIGNALED(status))
-	  logger(2,"SIGCHLD: child sig-terminated, pid=%d, signal=%d%s\n",
-		 pid,WTERMSIG(status),(0200 & status)?", core dumped":"");
-	else if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-	  logger(2,"SIGCHLD: child exited, pid=%d, status=%d\n",pid,
-		 WEXITSTATUS(status));
+	  pid = waitpid (-1 /* Any child */, &status, WNOHANG);
+	  if (pid <= 0) return ; /* No childs waiting for us. */
+
+	  /* We salvage dead childrens and make sure we don't gather zombies */
+	  if (WIFSTOPPED(status))
+	    logger(2,"SIGCHLD: child stopped! pid=%d, signal=%d\n",
+		   pid,WSTOPSIG(status));
+	  else if (WIFSIGNALED(status))
+	    logger(2,"SIGCHLD: child sig-terminated, pid=%d, signal=%d%s\n",
+		   pid,WTERMSIG(status),(0200 & status)?", core dumped":"");
+	  else if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+	    logger(2,"SIGCHLD: child exited, pid=%d, status=%d\n",pid,
+		   WEXITSTATUS(status));
+	}
+	/* NOT REACHED */
 #else /* !_POSIX_SOURCE */
 	union wait status;
 	struct rusage rusage;
 	int pid;
 
-	/* It seems that normal wait() without explicitic calls to this
-	   procedure can work also.  All tests indicate that polled
-	   handle_childs() just returns because of (pid <= 0). Always.
-	   Interrupt based handling has taken care of dead child.
-	   This is true at least on  SunOS 4.0.3			*/
+	for (;;) {
 
-	pid = wait3 (&status,WNOHANG,&rusage);
-	if (pid <= 0) return ; /* No childs waiting for us. */
+	  /* It seems that normal wait() without explicitic calls to this
+	     procedure can work also.  All tests indicate that polled
+	     handle_childs() just returns because of (pid <= 0). Always.
+	     Interrupt based handling has taken care of dead child.
+	     This is true at least on  SunOS 4.0.3			*/
 
-	/* We salvage dead childrens and make sure we don't gather zombies */
-	if (WIFSTOPPED(status))
-	  logger(2,"SIGCHLD: child stopped! pid=%d, signal=%d\n",
-		 pid,status.w_stopsig);
-	else if (WIFSIGNALED(status))
-	  logger(2,"SIGCHLD: child sig-terminated, pid=%d, signal=%d%s\n",
-		 pid,status.w_termsig,status.w_coredump?", core dumped":"");
-	else if (WIFEXITED(status) && status.w_retcode != 0)
-	  logger(2,"SIGCHLD: child exited, pid=%d, status=%d\n",pid,
-		 status.w_retcode);
+	  pid = wait3 (&status,WNOHANG,&rusage);
+	  if (pid <= 0) return ; /* No childs waiting for us. */
+
+	  /* We salvage dead childrens and make sure we don't gather zombies */
+	  if (WIFSTOPPED(status))
+	    logger(2,"SIGCHLD: child stopped! pid=%d, signal=%d\n",
+		   pid,status.w_stopsig);
+	  else if (WIFSIGNALED(status))
+	    logger(2,"SIGCHLD: child sig-terminated, pid=%d, signal=%d%s\n",
+		   pid,status.w_termsig,status.w_coredump?", core dumped":"");
+	  else if (WIFEXITED(status) && status.w_retcode != 0)
+	    logger(2,"SIGCHLD: child exited, pid=%d, status=%d\n",pid,
+		   status.w_retcode);
+	}
+	/* NOT REACHED */
 #endif /* !_POSIX_SOURCE */
 }
 #endif /* BSD_SIGCHLDS */
