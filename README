@@ -1,18 +1,1 @@
-HUJI-NJE software for attaching UNIX (and VMS) machines to BITNET
-
-	Original version by   yehavi@hujivms.bitnet
-		humble.huji.ac.il:[.LOCAL]NJE.TAR   (A VMS system)
-
-	A much improved UNIX-oriented FUNET version developed at
-	FINFILES machine (same as nic.funet.fi)
-	by Matti Aarnio  <mea@nic.funet.fi>
-
-There is email-list for FUNETNJE users:
-
-	funetnje@nic.funet.fi
-
-Subscriptions to it via:
-
-	mailserver@nic.funet.fi
-
-with LISTSERV-like commands ("SUBSCRIBE FUNETNJE Your Name")
+HujiNJE - NJE interface for RSCS networks
