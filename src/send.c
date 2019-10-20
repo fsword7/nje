@@ -26,7 +26,7 @@
 #include "clientutils.h"
 
 #define LINESIZE 512
-#define MAXTEXTSIZE 103
+#define MAXTEXTSIZE 80 /* Should be able to use at least 103 chars.. */
 #define CMD_MSG 0
 #define CMD_CMD 1
 
@@ -95,7 +95,7 @@ int	cc;
 	if (strcasecmp(*vv,"-s") == 0) {
 	  ++vv;
 	  --cc;
-	  strcpy(from,"@");
+	  sprintf(from,"@%s",LOCAL_NAME);
 	  if (getuid() >= LuserUidLevel) {
 	    type = -1;
 	    fprintf(stderr,"SEND: -s option requires priviledges!\n");
