@@ -1,0 +1,78 @@
+From funetnje-owner@nic.funet.fi  Thu Apr 20 16:49:09 1995
+Received: by nic.funet.fi id <9947-2>; Thu, 20 Apr 1995 16:39:03 +0300
+From:	Matti Aarnio <mea@nic.funet.fi>
+To:	funetnje@nic.funet.fi
+Subject: Test to mailing-list
+Message-Id: <95Apr20.163903+0300_eet_dst.9947-2+221@nic.funet.fi>
+Date:	Thu, 20 Apr 1995 16:39:01 +0300
+
+test
+
+From funetnje-owner@nic.funet.fi  Fri Apr 21 17:02:00 1995
+Received: by nic.funet.fi id <9484-2>; Fri, 21 Apr 1995 17:01:54 +0300
+From:	Matti Aarnio <mea@nic.funet.fi>
+To:	funetnje@nic.funet.fi
+Subject: New version of FUNETNJE...
+Message-Id: <95Apr21.170154+0300_eet_dst.9484-2+276@nic.funet.fi>
+Date:	Fri, 21 Apr 1995 17:01:53 +0300
+
+Well, lately there have been several per day.
+
+Now I am inclined to classify this as a pretty good one :)
+I have found several lesser, and larger problems over the last
+few days.  As of now I am running it in a debugger with
+a thing called "debugging malloc" (edit the Makefile, if you
+don't have it -- propably you don't have it, it is ZMailer's
+libmalloc..)
+
+So far so good, now it should run over the weekend unattended
+(as if I stay away from the office...)
+
+	/Matti Aarnio
+
+From funetnje-owner@nic.funet.fi  Sat Jun 10 07:18:13 1995
+Received: by nic.funet.fi id <90200-4>; Sat, 10 Jun 1995 07:17:48 +0300
+From:	Matti Aarnio <mea@nic.funet.fi>
+To:	funetnje@nic.funet.fi
+Subject: New FUNETNJE version available
+Message-Id: <95Jun10.071748+0300_eet_dst.90200-4+9@nic.funet.fi>
+Date:	Sat, 10 Jun 1995 07:17:47 +0300
+
+Hello,
+
+	I have now created a new source-dump of FUNETNJE
+	into FUNET file archive at directory URL:
+
+	ftp://ftp.funet.fi/pub/unix/networking/bitnet/
+
+	The dump is there with names:
+		funetnje-2.999.tar.gz
+		funetnje-950610.tar.gz
+
+	Because the documentation is not fully completed,
+	and potential problems do exist, I don't yet call
+	it 3.0 ..  (That problem appears on interaction
+	with JNET, which does not like our active opened
+	connection, and reports bad BCB sequence number..
+	Manager of FIPORT said that JNET quality has dropped
+	lately, so it may be a problem in there as well.
+	It does NOT occur on link to FINHUTC - real IBM,
+	nor to other FUNETNJE.. )
+
+	I have successfully stress-tested the NJE-transport
+	in between two FUNETNJEs, one on DEC 3000/900 AXP
+	with OSF/1 (sort of UNIX), other on a 486/33 with
+	Linux-1.2.9.  They have now sent tens of files to
+	each other both directions simultaneously, and done
+	so without a glitch (at the start of the link there
+	were some 70-80 files on both machines waiting to
+	be sent to  NOBODY@other_end.  Before last night's
+	marathon session such workload was enough to cause
+	communication error(s) to appear.)
+
+	Production transmissions over the FINFILES-FIPORT
+	link to the main network have always been successfull,
+	but likely much less stressfull :-)
+
+	/Matti Aarnio <mea@nic.funet.fi> <MEA@FINFILES.BITNET>
+
